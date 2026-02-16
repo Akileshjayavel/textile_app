@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Bill Preview</title>
+
+    <style>
+        /* DO NOT TOUCH BODY WIDTH */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: transparent;
+        }
+
+        /* SCREEN VIEW - NORMAL */
+        .page-wrapper {
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        /* Receipt Box */
+        .receipt {
+            font-family: monospace;
+            font-size: 12px;
+            width: 380px;
+            /* Normal Screen Size */
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .center {
+            text-align: center;
+        }
+
+        .right {
+            text-align: right;
+        }
+
+        .left {
+            text-align: left;
+        }
+
+        .bold {
+            font-weight: bold;
+        }
+
+        .line {
+            border-top: 1px dashed #000;
+            margin: 8px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 2px 0;
+        }
+
+        th {
+            border-bottom: 1px dashed #000;
+        }
+
+        .grand-total {
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .pending {
+            color: red;
+            font-weight: bold;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        /* Print Button */
+        .btn-print {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 12px;
+            border: none;
+            border-radius: 8px;
+            background: #2563eb;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .btn-print:hover {
+            background: #1d4ed8;
+        }
+
+        /* ==========================
+           PRINT SETTINGS (60mm)
+        ========================== */
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+                background: white;
+            }
+
+            .page-wrapper {
+                padding: 0;
+                margin: 0;
+            }
+
+            .receipt {
+                width: 60mm !important;
+                max-width: 60mm !important;
+                padding: 5px !important;
+                margin: 0 !important;
+                border: none !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+            }
+
+            .btn-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="page-wrapper">
+        <div class="receipt">
+
+            <!-- PRINT BUTTON -->
+            <button class="btn-print" onclick="window.print()">🖨 Print Bill</button>
+
+            <!-- HEADER -->
+            <div class="center bold" style="font-size: 16px;">
+                இரமகள் ஜவுளி & ரெடிமேட்ஸ்
+            </div>
+
+            <div class="center">
+                #1, முருகன் அவன்யு கடலூர் மெயின் ரோடு<br>
+                கல்லூர், கடலூர் மாவட்டம் - 606108<br>
+                📞 +91 98406 48788, +91 95971 49615<br>
+                GSTIN: 33ABCDE1234Z5X
+            </div>
+
+            <div class="line"></div>
+
+            <!-- BILL DETAILS -->
+            <table>
+                <tr>
+                    <td>Bill No</td>
+                    <td>: {{ bill['bill_no'] }}</td>
+                </tr>
+                <tr>
+                    <td>Date</td>
+                    <td>: {{ bill['created_at'][:10] }}</td>
+                </tr>
+                <tr>
+                    <td>Time</td>
+                    <td>: {{ bill['created_at'][11:19] }}</td>
+                </tr>
+                <tr>
+                    <td>Cashier</td>
+                    <td>: {{ session.get('username', session.get('role')) | capitalize }}</td>
+                </tr>
+                <tr>
+                    <td>Customer</td>
+                    <td>: {{ customer['name'] }}</td>
+                </tr>
+                <tr>
+                    <td>Mobile</td>
+                    <td>: {{ customer['mobile'] }}</td>
+                </tr>
+            </table>
+
+            <div class="line"></div>
+
+            <!-- ITEMS TABLE -->
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:10%;">Sno</th>
+                        <th style="width:40%;" class="left">Item</th>
+                        <th style="width:10%;" class="right">Qty</th>
+                        <th style="width:20%;" class="right">Rate</th>
+                        <th style="width:20%;" class="right">Amt</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td class="left">{{ item['product_name'] }}</td>
+                        <td class="right">{{ item['quantity'] }}</td>
+                        <td class="right">{{ "%.2f"|format(item['price']) }}</td>
+                        <td class="right">{{ "%.2f"|format(item['subtotal']) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="line"></div>
+
+            <!-- TOTALS -->
+            <table>
+                <tr>
+                    <td>Sub Total</td>
+                    <td class="right">₹ {{ "%.2f"|format(bill['total_amount']) }}</td>
+                </tr>
+
+                <tr>
+                    <td>CGST 2.5%</td>
+                    <td class="right">₹ 0.00</td>
+                </tr>
+
+                <tr>
+                    <td>SGST 2.5%</td>
+                    <td class="right">₹ 0.00</td>
+                </tr>
+
+                <tr>
+                    <td>Round Off</td>
+                    <td class="right">₹ 0.00</td>
+                </tr>
+            </table>
+
+            <div class="line"></div>
+
+            <div class="grand-total">
+                Grand Total: ₹ {{ "%.2f"|format(bill['total_amount']) }}
+            </div>
+
+            <div class="line"></div>
+
+            <!-- PAYMENT -->
+            {% set paid = bill['cash_amount'] + bill['paytm_amount'] %}
+            {% set pending = bill['total_amount'] - paid %}
+
+            <table>
+                <tr>
+                    <td>Cash Paid</td>
+                    <td class="right">₹ {{ "%.2f"|format(bill['cash_amount']) }}</td>
+                </tr>
+
+                <tr>
+                    <td>UPI Paid</td>
+                    <td class="right">₹ {{ "%.2f"|format(bill['paytm_amount']) }}</td>
+                </tr>
+
+                <tr>
+                    <td class="pending">Credit / Pending</td>
+                    <td class="right pending">₹ {{ "%.2f"|format(pending) }}</td>
+                </tr>
+            </table>
+
+            <div class="line"></div>
+
+            <!-- FOOTER -->
+            <div class="footer bold">
+                !! THANK YOU - VISIT AGAIN !!
+            </div>
+
+            <div class="footer">
+                Powered by akileshxxh
+            </div>
+
+        </div>
+    </div>
+
+</body>
+
+</html>

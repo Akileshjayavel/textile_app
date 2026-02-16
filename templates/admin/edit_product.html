@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h4>Edit Product</h4>
+
+<form method="post">
+  <input name="name" class="form-control mb-2" value="{{ product[1] }}">
+  <input name="category" class="form-control mb-2" value="{{ product[2] }}">
+  <input name="purchase_price" type="number" step="0.01" class="form-control mb-2" value="{{ product[3] }}">
+  <input name="selling_price" type="number" step="0.01" class="form-control mb-2" value="{{ product[4] }}">
+  <input name="stock" type="number" class="form-control mb-2" value="{{ product[5] }}">
+  <input name="low_stock_limit" type="number" class="form-control mb-2" value="{{ product[6] }}">
+
+  <button class="btn btn-success">Update</button>
+</form>
+
+{% endblock %}

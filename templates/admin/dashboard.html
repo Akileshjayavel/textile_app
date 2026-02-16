@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!-- ================= HEADER ================= -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="fw-semibold mb-0">Admin Dashboard</h3>
+</div>
+
+<!-- ================= KPI CARDS ================= -->
+<div class="row g-3">
+
+    <!-- TOTAL PRODUCTS -->
+    <div class="col-md-2 col-sm-6">
+        <div class="kpi-card compact">
+            <p>Total Products</p>
+            <h3>{{ total_products }}</h3>
+        </div>
+    </div>
+
+    <!-- LOW STOCK -->
+    <div class="col-md-2 col-sm-6">
+        <div class="kpi-card compact">
+            <p>Low Stock</p>
+            <h3>{{ low_stock }}</h3>
+        </div>
+    </div>
+
+</div>
+
+<!-- ================= STOCK MANAGEMENT ================= -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card shadow-sm rounded-3">
+            <div class="card-body">
+
+                <h5 class="fw-semibold mb-3">Stock Management</h5>
+
+                <div class="d-flex flex-wrap gap-3">
+
+                    <a href="/admin/products/add" class="btn btn-success px-4">
+                        Add Product
+                    </a>
+
+                    <a href="/admin/products" class="btn btn-primary px-4">
+                        View / Edit Stock
+                    </a>
+
+                    <a href="/admin/products?filter=low" class="btn btn-danger px-4">
+                        Low Stock Items
+                    </a>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= STYLES ================= -->
+<style>
+/* COMPACT + SLIGHTLY LARGER KPI CARDS */
+.kpi-card.compact {
+    background: #ffffff;
+    border: 1px solid #e5e5e5;
+    border-radius: 6px;
+    padding: 12px 14px;          /* 🔼 slightly bigger */
+    min-height: 85px;            /* 🔼 slightly taller */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Label */
+.kpi-card.compact p {
+    font-size: 12px;             /* 🔼 increased */
+    color: #6c757d;
+    margin-bottom: 4px;
+}
+
+/* Value */
+.kpi-card.compact h3 {
+    margin: 0;
+    font-size: 21px;             /* 🔼 increased */
+    font-weight: 600;
+}
+</style>
+
+{% endblock %}

@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- ================= HEADER ================= -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">Dashboard</h3>
+
+    <!-- NEW BILL BUTTON – RIGHT CORNER -->
+    <a href="{{ url_for('user_billing') }}" class="btn btn-primary">
+        + New Bill
+    </a>
+</div>
+
+<div class="row">
+
+    <!-- ================= LEFT : BILL GRID ================= -->
+    <div class="col-md-7">
+
+        <!-- BILL GRID (3 PER ROW) -->
+        <div class="bill-grid">
+
+            {% for bill in bills %}
+            <div class="glass-premium glass-card tilt-3d bill-box" data-id="{{ bill.id }}">
+
+                <div class="bill-no">
+                    {{ bill.bill_no }}
+                </div>
+
+                <div class="bill-date">
+                    {{ bill.created_at.split(' ')[0] }}
+                </div>
+
+                <div class="bill-amount">
+                    ₹ {{ "%.2f"|format(bill.total_amount) }}
+                </div>
+
+            </div>
+            {% endfor %}
+
+        </div>
+    </div>
+
+    <!-- ================= RIGHT : BILL PREVIEW ================= -->
+    <div class="col-md-5">
+
+        <div id="billPreview" class="bill-preview d-none">
+
+            <!-- ACTION BAR -->
+            <div class="preview-header">
+                <button class="btn btn-outline-secondary btn-sm px-4" id="closePreview">
+                    Close
+                </button>
+
+                <button class="btn btn-success btn-sm px-4" id="printBill">
+                    Print
+                </button>
+            </div>
+
+            <!-- RECEIPT PREVIEW -->
+            <iframe id="billFrame"></iframe>
+        </div>
+
+        <div id="emptyPreview" class="text-muted text-center mt-5">
+            <p>Select a bill to preview</p>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ================= STYLES ================= -->
+<style>
+    /* ===== BILL GRID : 3 PER ROW ===== */
+    .bill-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 18px;
+    }
+
+    /* ===== BILL BOX ===== */
+    .bill-box {
+        border-radius: 20px;
+        padding: 18px 10px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.25s ease;
+    }
+
+    .bill-box:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+    }
+
+    .bill-no {
+        font-weight: 700;
+        color: #0d6efd;
+        margin-bottom: 6px;
+        font-size: 14px;
+    }
+
+    .bill-date {
+        font-size: 12px;
+        color: #666;
+        margin-bottom: 6px;
+    }
+
+    .bill-amount {
+        font-size: 17px;
+        font-weight: 700;
+    }
+
+    /* ===== RIGHT PREVIEW ===== */
+    .bill-preview {
+        position: sticky;
+        top: 90px;
+        background: transparent;
+    }
+
+    /* ACTION BAR */
+    .preview-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid #ddd;
+    }
+
+    /* RECEIPT IFRAME */
+    #billFrame {
+        width: 100%;
+        height: 760px;
+        border: none;
+        background: transparent;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 992px) {
+        .bill-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 576px) {
+        .bill-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<!-- ================= SCRIPT ================= -->
+<script>
+    document.querySelectorAll(".bill-box").forEach(box => {
+        box.addEventListener("click", function () {
+            const billId = this.dataset.id;
+
+            document.getElementById("billFrame").src = "/bill/print/" + billId;
+            document.getElementById("billPreview").classList.remove("d-none");
+            document.getElementById("emptyPreview").style.display = "none";
+        });
+    });
+
+    document.getElementById("closePreview").addEventListener("click", () => {
+        document.getElementById("billFrame").src = "";
+        document.getElementById("billPreview").classList.add("d-none");
+        document.getElementById("emptyPreview").style.display = "block";
+    });
+
+    document.getElementById("printBill").addEventListener("click", () => {
+        document.getElementById("billFrame").contentWindow.print();
+    });
+</script>
+
+{% endblock %}

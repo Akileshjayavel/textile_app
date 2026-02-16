@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% block content %}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500&display=swap" rel="stylesheet">
+
+<style>
+  /* Calendar Styling to match screenshot */
+  .datepicker-container {
+    font-family: 'Playfair Display', serif;
+  }
+  
+  .custom-date-input {
+    border: 1px solid #b3d7ff !important;
+    border-radius: 6px !important;
+    padding: 8px 15px !important;
+    min-width: 250px;
+    cursor: pointer;
+    background-color: white !important;
+  }
+
+  .flatpickr-calendar {
+    font-family: 'Playfair Display', serif !important;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+    border: 1px solid #eee !important;
+  }
+
+  /* Selection Circle styling */
+  .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange {
+    background: transparent !important;
+    border: 1px solid #718096 !important;
+    color: #000 !important;
+    border-radius: 50% !important;
+  }
+
+  .flatpickr-day.inRange {
+    background: #f0f7ff !important;
+    box-shadow: none !important;
+  }
+
+  .apply-btn {
+    background-color: #3182ce !important;
+    border: none !important;
+    padding: 8px 20px !important;
+    font-weight: 500;
+  }
+</style>
+
+<div class="container-fluid py-4">
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+          <h3 class="fw-bold mb-0">Admin Sales Reports</h3>
+          <p class="text-muted small mb-0">Showing data for: <strong>{{ start_date }}</strong> to <strong>{{ end_date }}</strong></p>
+        </div>
+        
+        <form action="{{ url_for('admin_reports.admin_reports_dashboard') }}" method="GET" class="d-flex align-items-end gap-2 datepicker-container">
+          <div class="position-relative">
+            <label class="small fw-bold text-muted d-block mb-1">Date Range</label>
+            <input type="text" id="rangePicker" class="form-control custom-date-input" placeholder="Select Dates">
+            <input type="hidden" name="start_date" id="start_date_val" value="{{ start_date }}">
+            <input type="hidden" name="end_date" id="end_date_val" value="{{ end_date }}">
+          </div>
+          <button type="submit" class="btn btn-primary apply-btn shadow-sm">Apply</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <div class="card shadow-sm border-0"><div class="card-body text-center">
+        <p class="text-muted small fw-semibold text-uppercase mb-1">Total Sales (Net)</p>
+        <h4 class="fw-bold mb-0">₹ {{ total_sales }}</h4>
+      </div></div>
+    </div>
+    <div class="col-md-3">
+      <div class="card shadow-sm border-0"><div class="card-body text-center">
+        <p class="text-muted small fw-semibold text-uppercase mb-1">Stock Cost</p>
+        <h4 class="fw-bold mb-0 text-secondary">₹ {{ total_cost or 0 }}</h4>
+      </div></div>
+    </div>
+    <div class="col-md-3">
+      <div class="card shadow-sm border-0 bg-light"><div class="card-body text-center">
+        <p class="text-muted small fw-semibold text-uppercase mb-1">Discount Given</p>
+        <h4 class="fw-bold mb-0 text-danger">₹ {{ total_discount or 0 }}</h4>
+      </div></div>
+    </div>
+    <div class="col-md-3">
+      <div class="card shadow-sm border-0 bg-primary text-white"><div class="card-body text-center">
+        <p class="text-white-50 small fw-semibold text-uppercase mb-1">Total Profit</p>
+        <h4 class="fw-bold mb-0">₹ {{ today_profit }}</h4>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-3">
+    <div class="btn-group shadow-sm">
+      <button type="button" class="btn btn-white border filter-btn active" data-filter="all">All Bills</button>
+      <button type="button" class="btn btn-white border filter-btn" data-filter="Pending">Pending</button>
+      <button type="button" class="btn btn-white border filter-btn" data-filter="Discounted">Discounted</button>
+    </div>
+    <div class="position-relative">
+      <span class="position-absolute top-50 start-0 translate-middle-y ps-3 text-muted"><i class="bi bi-search"></i></span>
+      <input type="text" id="tableSearch" class="form-control ps-5 shadow-sm" style="min-width: 300px;" placeholder="Search Bill No...">
+    </div>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0" id="billsTable">
+        <thead class="table-light">
+          <tr>
+            <th class="ps-4">Bill No</th>
+            <th>Identification</th>
+            <th class="text-end">Original Amt</th>
+            <th class="text-end">Discount</th>
+            <th class="text-end pe-4">Final Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in table_rows %}
+          {% set discount_amt = (r.bill_gross or 0) - r.total_amount %}
+          <tr class="bill-row" data-status="{{ r.payment_status }}" data-has-discount="{{ 'true' if discount_amt > 0.5 else 'false' }}">
+            <td class="ps-4">
+               <span class="fw-bold bill-id">#{{ r.bill_no }}</span>
+               <div class="text-muted small">{{ r.sale_date }}</div>
+            </td>
+            <td>
+              {% if r.payment_status == 'Pending' %}
+                <span class="badge bg-danger">Pending Payment</span>
+              {% else %}
+                <span class="badge bg-success">Paid</span>
+              {% endif %}
+              {% if discount_amt > 0.5 %}<span class="badge bg-warning text-dark">Discounted</span>{% endif %}
+            </td>
+            <td class="text-end text-muted">{% if discount_amt > 0.5 %}<s>₹ {{ r.bill_gross }}</s>{% else %}₹ {{ r.total_amount }}{% endif %}</td>
+            <td class="text-end text-danger">{% if discount_amt > 0.5 %}-₹ {{ discount_amt | round(2) }}{% else %}—{% endif %}</td>
+            <td class="text-end pe-4 fw-bold text-primary">₹ {{ r.total_amount }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+  // CALENDAR LOGIC (FLATPICKR)
+  flatpickr("#rangePicker", {
+    mode: "range",
+    dateFormat: "Y-m-d",
+    defaultDate: ["{{ start_date }}", "{{ end_date }}"],
+    onClose: function(selectedDates, dateStr, instance) {
+      if (selectedDates.length === 2) {
+        // Map the range dates back to the hidden inputs for the form
+        document.getElementById('start_date_val').value = instance.formatDate(selectedDates[0], "Y-m-d");
+        document.getElementById('end_date_val').value = instance.formatDate(selectedDates[1], "Y-m-d");
+      }
+    }
+  });
+
+  // CHART LOGIC
+  const chartLabels = JSON.parse('{{ chart_labels | tojson | safe }}');
+  const chartValues = JSON.parse('{{ chart_values | tojson | safe }}');
+  const ctx = document.getElementById('salesChart')?.getContext('2d');
+  if(ctx) {
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: chartLabels,
+        datasets: [{
+          label: 'Sales (₹)',
+          data: chartValues,
+          borderColor: '#0d6efd',
+          backgroundColor: 'rgba(13, 110, 253, 0.1)',
+          fill: true,
+          tension: 0.4
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
+  }
+
+  // SEARCH & FILTER (Keep existing logic)
+  document.getElementById('tableSearch').addEventListener('keyup', function() {
+      let searchQuery = this.value.toLowerCase();
+      document.querySelectorAll('.bill-row').forEach(row => {
+          let billId = row.querySelector('.bill-id').textContent.toLowerCase();
+          row.style.display = billId.includes(searchQuery) ? "" : "none";
+      });
+  });
+
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+          document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active', 'btn-primary'));
+          this.classList.add('active', 'btn-primary');
+          let filter = this.getAttribute('data-filter');
+          document.querySelectorAll('.bill-row').forEach(row => {
+              if (filter === 'all') row.style.display = "";
+              else if (filter === 'Discounted') row.style.display = row.getAttribute('data-has-discount') === 'true' ? "" : "none";
+              else row.style.display = row.getAttribute('data-status') === filter ? "" : "none";
+          });
+      });
+  });
+</script>
+
+{% endblock %}

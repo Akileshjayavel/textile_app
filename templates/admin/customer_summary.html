@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block content %}
+
+<a href="{{ url_for('admin_customers.admin_customers') }}"
+   class="btn btn-outline-secondary mb-3">
+    ← Back to Customers
+</a>
+
+<!-- ================= CUSTOMER INFO ================= -->
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h4 class="mb-1">{{ customer.name }}</h4>
+                <div class="text-muted">
+                    📞 {{ customer.mobile }} <br>
+                    📍 {{ customer.address or "-" }}
+                </div>
+            </div>
+
+            <div class="col-md-4 text-end">
+                {% if pending_amount > 0 %}
+                <a href="{{ url_for('receive_payment', customer_id=customer.id) }}"
+                   class="btn btn-success">
+                    💰 Receive Payment
+                </a>
+                {% else %}
+                <span class="badge bg-success">No Pending</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= KPI CARDS ================= -->
+<div class="row g-3 mb-3">
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <small>Total Amount</small>
+                <h4>₹ {{ total_amount }}</h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <small>Paid</small>
+                <h4 class="text-success">₹ {{ paid_amount }}</h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <small>Pending</small>
+                <h4 class="text-danger">₹ {{ pending_amount }}</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= BILLS TABLE ================= -->
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-bordered mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Bill No</th>
+                    <th>Date</th>
+                    <th class="text-end">Amount</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in bills %}
+                <tr>
+                    <td>{{ b.bill_no }}</td>
+                    <td>{{ b.date }}</td>
+                    <td class="text-end">₹ {{ b.amount }}</td>
+                    <td>
+                        {% if b.status == "Paid" %}
+                            <span class="badge bg-success">Paid</span>
+                        {% else %}
+                            <span class="badge bg-warning">Pending</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="text-center text-muted">
+                        No bills found
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

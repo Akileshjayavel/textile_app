@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="glass-premium glass-card card shadow-sm border-0 mb-4" style="border-radius: 15px;">
+        <div class="card-header py-3 border-0">
+            <h4 class="fw-bold mb-0">Customer Transactions</h4>
+        </div>
+        <div class="card-body">
+            <form method="post" class="row g-2 mb-0">
+                <div class="col-md-9">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0"><i
+                                class="bi bi-search text-muted"></i></span>
+                        <input type="text" name="customer_mobile" class="form-control border-start-0"
+                            placeholder="Search by customer name or mobile..." required>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <button class="btn btn-primary w-100 rounded-3">Search Customer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if customer %}
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="glass-premium glass-card card h-100 shadow-sm border-0"
+                style="border-radius: 15px; border-left: 5px solid var(--primary);">
+                <div class="card-body">
+                    <h6 class="text-muted small fw-bold text-uppercase mb-3">Customer Details</h6>
+                    <h5 class="fw-bold mb-1">{{ customer.name }}</h5>
+                    <p class="text-muted mb-2"><i class="bi bi-phone"></i> {{ customer.mobile }}</p>
+                    <p class="small mb-0 text-secondary"><i class="bi bi-geo-alt"></i> {{ customer.address or "No
+                        address provided" }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="glass-premium glass-card card h-100 shadow-sm border-0" style="border-radius: 15px;">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr class="small text-uppercase">
+                                <th class="ps-3">Date</th>
+                                <th>Bill No</th>
+                                <th>Total</th>
+                                <th>Paid</th>
+                                <th class="text-danger">Pending</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for b in bills %}
+                            <tr>
+                                <td class="ps-3 small">{{ b.created_at[:10] }}</td>
+                                <td>
+                                    <a href="javascript:void(0)" onclick="openBill('{{ b.bill_no }}')"
+                                        class="fw-bold text-decoration-none">
+                                        #{{ b.bill_no }}
+                                    </a>
+                                </td>
+                                <td class="fw-bold">₹{{ "%.2f"|format(b.total_amount) }}</td>
+                                <td class="text-muted">₹{{ "%.2f"|format(b.cash_amount + b.paytm_amount) }}</td>
+                                <td class="text-danger fw-bold">₹{{ "%.2f"|format(b.total_amount - b.cash_amount -
+                                    b.paytm_amount) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="glass-premium glass-card card shadow-sm border-0" style="border-radius: 15px;">
+        <div class="card-header py-3 border-0 border-bottom">
+            <h5 class="fw-bold mb-0">Active Debtors</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Customer Name</th>
+                        <th>Mobile</th>
+                        <th>Pending Amount</th>
+                        <th class="text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in pending_customers %}
+                    <tr>
+                        <td class="ps-4 fw-bold text-dark">{{ c.name }}</td>
+                        <td class="text-muted font-monospace">{{ c.mobile }}</td>
+                        <td class="text-danger fw-bold">₹ {{ "%.2f"|format(c.pending_amount) }}</td>
+                        <td class="text-center">
+                            <button class="btn btn-success btn-sm px-3 rounded-pill" data-bs-toggle="modal"
+                                data-bs-target="#paymentModal" data-mobile="{{ c.mobile }}" data-name="{{ c.name }}"
+                                data-pending="{{ c.pending_amount }}">
+                                <i class="bi bi-cash-stack"></i> Receive Payment
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center py-5 text-muted">
+                            <i class="bi bi-check-circle display-4 d-block mb-3 text-success"></i>
+                            No pending payments found
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="paymentModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <form method="post" action="/customers/receive-payment" class="modal-content border-0 shadow-lg"
+            style="border-radius: 20px;" onsubmit="return validatePayment()">
+
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Receive Payment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body pt-3">
+                <div id="paymentError" class="alert alert-danger d-none small"></div>
+
+                <input type="hidden" name="customer_mobile" id="payCustomerMobile">
+                <input type="hidden" id="pendingAmount">
+
+                <div class="text-center mb-4 p-3 rounded-4"
+                    style="background-color: #fcfcfc; border: 1px solid #f0f0f0;">
+                    <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 1px;">
+                        Customer: <span id="payCustomerNameSpan"></span>
+                    </small>
+                    <h2 class="text-danger fw-bold mb-0 mt-1">₹ <span id="pendingView"></span></h2>
+                    <input type="hidden" id="payCustomerName">
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-6">
+                        <label class="form-label small fw-bold text-secondary">Cash Amount</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white text-muted border-end-0">₹</span>
+                            <input type="number" name="cash_amount" id="cashAmount" class="form-control border-start-0"
+                                value="0" min="0" step="0.01" onclick="this.select()">
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small fw-bold text-secondary">UPI Amount</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white text-muted border-end-0">₹</span>
+                            <input type="number" name="paytm_amount" id="upiAmount" class="form-control border-start-0"
+                                value="0" min="0" step="0.01" onclick="this.select()">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <label class="form-label small fw-bold text-secondary">Payment Note</label>
+                    <input type="text" name="note" class="form-control" value="Balance Settlement"
+                        placeholder="Add a comment...">
+                </div>
+            </div>
+
+            <div class="modal-footer border-0 pt-0 pb-4">
+                <button type="button" class="btn btn-light px-4 fw-bold" data-bs-dismiss="modal"
+                    style="border-radius: 10px;">Cancel</button>
+                <button type="submit" class="btn btn-success px-4 fw-bold"
+                    style="border-radius: 10px; background-color: #198754;">
+                    Save Payment
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="billModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow" style="border-radius: 15px;">
+            <div class="modal-header border-bottom-0">
+                <h5 class="modal-title fw-bold">Bill Preview</h5>
+                <div class="ms-auto">
+                    <button class="btn btn-success btn-sm rounded-pill px-3 me-2" onclick="printBill()"><i
+                            class="bi bi-printer"></i> Print</button>
+                    <button class="btn btn-outline-danger btn-sm rounded-pill" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+            <div class="modal-body" id="billContent"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    /* -------- BILL PREVIEW ---------- */
+    function openBill(billNo) {
+        fetch(`/bill/view/${billNo}`)
+            .then(res => res.text())
+            .then(html => {
+                document.getElementById("billContent").innerHTML = html;
+                new bootstrap.Modal(document.getElementById("billModal")).show();
+            });
+    }
+
+    function printBill() {
+        const content = document.getElementById("billContent").innerHTML;
+        const win = window.open('', '', 'width=900,height=650');
+        win.document.write(`
+        <html>
+            <head><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"></head>
+            <body>${content}</body>
+        </html>
+    `);
+        win.document.close();
+        win.print();
+    }
+
+    /* -------- PAYMENT LOGIC ---------- */
+    const pModal = document.getElementById("paymentModal");
+
+    pModal.addEventListener("show.bs.modal", function (e) {
+        const btn = e.relatedTarget;
+        document.getElementById("payCustomerMobile").value = btn.dataset.mobile;
+        document.getElementById("payCustomerName").value = btn.dataset.name;
+        document.getElementById("payCustomerNameSpan").innerText = btn.dataset.name;
+        document.getElementById("pendingAmount").value = btn.dataset.pending;
+        document.getElementById("pendingView").innerText = Number(btn.dataset.pending).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+
+        document.getElementById("cashAmount").value = 0;
+        document.getElementById("upiAmount").value = 0;
+        document.getElementById("paymentError").classList.add("d-none");
+    });
+
+    function validatePayment() {
+        const pending = Number(document.getElementById("pendingAmount").value);
+        const cash = Number(document.getElementById("cashAmount").value || 0);
+        const upi = Number(document.getElementById("upiAmount").value || 0);
+
+        if (cash + upi > pending + 0.01) { // Added small buffer for rounding
+            const err = document.getElementById("paymentError");
+            err.innerHTML = `<strong>Error:</strong> Amount exceeds pending balance (Max: ₹${pending.toFixed(2)})`;
+            err.classList.remove("d-none");
+            return false;
+        }
+        return true;
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Payment Receipt</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      width: 300px;
+      margin: auto;
+      font-size: 12px;
+    }
+    .center {
+      text-align: center;
+    }
+    h3 {
+      margin: 4px 0;
+      font-size: 16px;
+    }
+    .shop-details {
+      font-size: 11px;
+      line-height: 1.4;
+    }
+    .row {
+      display: flex;
+      justify-content: space-between;
+      margin: 4px 0;
+    }
+    hr {
+      border: none;
+      border-top: 1px dashed #000;
+      margin: 8px 0;
+    }
+  </style>
+</head>
+
+<body onload="handlePrint()">
+
+<!-- 🏪 SHOP DETAILS -->
+<div class="center shop-details">
+  <h3><strong>இரைமகள் ஜவுளி & ரெடிமேட்ஸ்</strong></h3>
+  #1, முருகன் அவன்யூ, கடலூர் மெயின் ரோடு<br>
+  கல்லூர், கடலூர் மாவட்டம் - 606108<br>
+  📞 +91 98406 48788, +91 95971 49615<br>
+  <strong>GSTIN:</strong> 33ABCDE1234Z5X
+</div>
+
+<hr>
+
+<h4 class="center">Payment Receipt</h4>
+
+<hr>
+
+<!-- RECEIPT DETAILS -->
+<div class="row">
+  <span>Date</span>
+  <span>{{ payment.created_at }}</span>
+</div>
+
+<div class="row">
+  <span>Customer</span>
+  <span>{{ payment.customer_name }}</span>
+</div>
+
+<div class="row">
+  <span>Mobile</span>
+  <span>{{ payment.customer_mobile }}</span>
+</div>
+
+<hr>
+
+{% if payment.cash_amount > 0 %}
+<div class="row">
+  <span>Cash</span>
+  <span>₹ {{ "%.2f"|format(payment.cash_amount) }}</span>
+</div>
+{% endif %}
+
+{% if payment.paytm_amount > 0 %}
+<div class="row">
+  <span>UPI</span>
+  <span>₹ {{ "%.2f"|format(payment.paytm_amount) }}</span>
+</div>
+{% endif %}
+
+<hr>
+
+<div class="row">
+  <strong>Total Paid</strong>
+  <strong>₹ {{ "%.2f"|format(payment.cash_amount + payment.paytm_amount) }}</strong>
+</div>
+
+<hr>
+
+<!-- ✅ NEW: PENDING AMOUNT AFTER PAYMENT -->
+<div class="row">
+  <strong>Pending Amount</strong>
+  <strong>₹ {{ "%.2f"|format(pending_amount) }}</strong>
+</div>
+
+<hr>
+
+<div class="center" style="margin-top:20px;">
+  Authorized Signature
+</div>
+
+<!-- 🔁 PRINT & AUTO-REDIRECT -->
+<script>
+function handlePrint() {
+  window.print();
+
+  // After print OR cancel → go back to customers page
+  setTimeout(function () {
+    window.location.href = "/customers";
+  }, 1500);
+}
+</script>
+
+</body>
+</html>

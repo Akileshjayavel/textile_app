@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="fw-semibold mb-0">Edit Customer</h3>
+    <a href="{{ url_for('admin_customers.admin_customers') }}"
+       class="btn btn-outline-secondary btn-sm">
+        ← Back
+    </a>
+</div>
+
+<div class="card shadow-sm rounded-3">
+    <div class="card-body">
+
+        <form method="post">
+
+            <!-- NAME -->
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Customer Name</label>
+                <input type="text"
+                       name="name"
+                       class="form-control"
+                       value="{{ customer.name }}"
+                       required>
+            </div>
+
+            <!-- MOBILE -->
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Mobile Number</label>
+                <input type="text"
+                       name="mobile"
+                       class="form-control"
+                       value="{{ customer.mobile }}"
+                       required>
+            </div>
+
+            <!-- ADDRESS -->
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Address</label>
+                <textarea name="address"
+                          class="form-control"
+                          rows="3">{{ customer.address }}</textarea>
+            </div>
+
+            <!-- ACTIONS -->
+            <div class="d-flex gap-2">
+                <button class="btn btn-success px-4">
+                    Update Customer
+                </button>
+
+                <a href="{{ url_for('admin_customers.admin_customers') }}"
+                   class="btn btn-outline-danger px-4">
+                    Cancel
+                </a>
+            </div>
+
+        </form>
+
+    </div>
+</div>
+
+{% endblock %}

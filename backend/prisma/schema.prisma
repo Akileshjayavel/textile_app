@@ -1,0 +1,89 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  passwordHash  String   @map("password_hash")
+  role          String   @default("staff") // 'admin' | 'staff'
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  invoices      Invoice[]
+
+  @@map("users")
+}
+
+model Customer {
+  id         String    @id @default(uuid())
+  name       String
+  phone      String?
+  address    String?
+  gstNumber  String?   @map("gst_number")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  invoices   Invoice[]
+
+  @@map("customers")
+}
+
+model Product {
+  id         String        @id @default(uuid())
+  name       String
+  code       String?       @unique
+  unit       String        @default("meter") // 'meter' | 'roll'
+  hsnCode    String        @map("hsn_code")
+  gstRate    Float         @map("gst_rate") // percentage, e.g., 5, 12, 18
+  salePrice  Float         @map("sale_price")
+  stockQty   Float?        @map("stock_qty")
+  createdAt  DateTime      @default(now()) @map("created_at")
+  updatedAt  DateTime      @updatedAt @map("updated_at")
+  invoiceItems InvoiceItem[]
+
+  @@map("products")
+}
+
+model Invoice {
+  id              String        @id @default(uuid())
+  invoiceNumber   String        @unique @map("invoice_number")
+  invoiceDate     DateTime      @map("invoice_date")
+  customerId      String?       @map("customer_id")
+  subtotalAmount  Float         @map("subtotal_amount")
+  totalGstAmount  Float         @map("total_gst_amount")
+  totalAmount     Float         @map("total_amount")
+  discountAmount  Float?         @default(0) @map("discount_amount")
+  paymentMode     String        @map("payment_mode") // 'cash' | 'upi' | 'card' | 'credit'
+  createdByUserId String        @map("created_by_user_id")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  customer        Customer?     @relation(fields: [customerId], references: [id])
+  createdByUser   User          @relation(fields: [createdByUserId], references: [id])
+  items           InvoiceItem[]
+
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id              String   @id @default(uuid())
+  invoiceId       String   @map("invoice_id")
+  productId       String   @map("product_id")
+  description     String?
+  quantity        Float
+  rate            Float
+  amountBeforeTax Float    @map("amount_before_tax")
+  gstRate         Float    @map("gst_rate")
+  gstAmount       Float    @map("gst_amount")
+  totalAmount     Float    @map("total_amount")
+  invoice         Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  product         Product  @relation(fields: [productId], references: [id])
+
+  @@map("invoice_items")
+}

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Bill Print</title>
+
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        .bill-print {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 12px;
+            color: #000;
+        }
+
+        .center {
+            text-align: center;
+        }
+
+        .right {
+            text-align: right;
+        }
+
+        .line {
+            border-top: 1px dashed #000;
+            margin: 6px 0;
+        }
+
+        .pending {
+            color: red;
+            font-weight: bold;
+        }
+
+        .bill-container {
+            position: relative;
+            width: 75mm;
+            max-width: 75mm;
+            margin: auto;
+        }
+
+        .watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-30deg);
+            font-size: 36px;
+            font-weight: bold;
+            color: rgba(200, 0, 0, 0.18);
+            pointer-events: none;
+            white-space: nowrap;
+            z-index: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            font-size: 12px;
+            padding: 2px 0;
+        }
+
+        th {
+            text-align: left;
+            border-bottom: 1px dashed #000;
+        }
+
+        .no-print {
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            .bill-container {
+                width: 75mm;
+                max-width: 75mm;
+                margin: 0;
+
+                .no-print {
+                    margin-bottom: 10px;
+                }
+
+                .no-print {
+                    display: none !important;
+                }
+            }
+
+        }
+    </style>
+</head>
+
+<body>
+    {% if request.args.get('source') == 'reports' %}
+    <div style="display:flex;justify-content:space-between;
+            padding:15px 20px;border-bottom:1px solid #ddd;" class="no-print">
+
+        <h5 style="margin:0;">Bill Preview</h5>
+
+        <div>
+            <button onclick="window.print()" style="background:#28a745;color:white;
+                       border:none;padding:6px 12px;
+                       border-radius:4px;margin-right:8px;">
+                Print
+            </button>
+
+            <a href="{{ url_for('reports') }}" style="background:#dc3545;color:white;
+                  text-decoration:none;
+                  padding:6px 12px;
+                  border-radius:4px;">
+                Close
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    {% set pending = bill.total_amount - bill.cash_amount - bill.paytm_amount %}
+
+    <!-- ================= TOP BUTTONS ================= -->
+    {% if request.args.get('source') == 'reports' %}
+    <div class="no-print">
+        <a href="{{ url_for('reports') }}"
+            style="padding:6px 12px;background:#6c757d;color:#fff;text-decoration:none;border-radius:4px;">
+            ← Back to Reports
+        </a>
+    </div>
+    {% endif %}
+
+    <div class="bill-container bill-print">
+
+        {% if pending > 0 %}
+        <div class="watermark">CREDIT BILL</div>
+        {% endif %}
+
+        <div style="position: relative; z-index: 1;">
+
+            <!-- SHOP HEADER -->
+            <div class="center">
+                <strong>இரைமகள் ஜவுளி & ரெடிமேட்ஸ்</strong><br>
+                #1 மும்பை பவன், ஆவட்டி கூட்ரோடு<br>
+                கல்லூர், கடலூர் மாவட்டம் - 606108<br>
+                📞 +91 98406 48788, +91 95971 49615<br>
+                GSTIN: 33ABCDE1234Z5X
+            </div>
+
+            <div class="line"></div>
+
+            <!-- BILL INFO -->
+            <table>
+                <tr>
+                    <td>Bill No</td>
+                    <td>: {{ bill.bill_no }}</td>
+                </tr>
+                <tr>
+                    <td>Date</td>
+                    <td>: {{ bill.created_at.split(' ')[0] }}</td>
+                </tr>
+                <tr>
+                    <td>Time</td>
+                    <td>: {{ bill.created_at.split(' ')[1] }}</td>
+                </tr>
+                <tr>
+                    <td>Cashier</td>
+                    <td>: {{ session.get('username', 'Admin') | capitalize }}</td>
+                </tr>
+                <tr>
+                    <td>Customer</td>
+                    <td>: {{ customer.name if customer else 'Walk-in' }}</td>
+                </tr>
+                <tr>
+                    <td>Mobile</td>
+                    <td>: {{ customer.mobile if customer else '' }}</td>
+                </tr>
+            </table>
+
+            <div class="line"></div>
+
+            <!-- ITEMS -->
+            <table>
+                <thead>
+                    <tr>
+                        <th>Sno</th>
+                        <th>Item</th>
+                        <th class="right">Qty</th>
+                        <th class="right">Rate</th>
+                        <th class="right">Amt</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ item.product_name }}</td>
+                        <td class="right">{{ item.quantity }}</td>
+                        <td class="right">{{ "%.2f"|format(item.price) }}</td>
+                        <td class="right">{{ "%.2f"|format(item.subtotal) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="line"></div>
+
+            <!-- TOTALS -->
+            <table>
+                <tr>
+                    <td>Sub Total</td>
+                    <td class="right">₹ {{ "%.2f"|format(bill.total_amount) }}</td>
+                </tr>
+                <tr>
+                    <td>CGST 2.5%</td>
+                    <td class="right">₹ 0.00</td>
+                </tr>
+                <tr>
+                    <td>SGST 2.5%</td>
+                    <td class="right">₹ 0.00</td>
+                </tr>
+                <tr>
+                    <td>Round Off</td>
+                    <td class="right">₹ 0.00</td>
+                </tr>
+            </table>
+
+            <div class="line"></div>
+
+            <div class="center">
+                <strong>Grand Total: ₹ {{ "%.2f"|format(bill.total_amount) }}</strong>
+            </div>
+
+            <div class="line"></div>
+
+            <!-- PAYMENT -->
+            <table>
+                <tr>
+                    <td>Cash Paid</td>
+                    <td class="right">₹ {{ "%.2f"|format(bill.cash_amount) }}</td>
+                </tr>
+                <tr>
+                    <td>UPI Paid</td>
+                    <td class="right">₹ {{ "%.2f"|format(bill.paytm_amount) }}</td>
+                </tr>
+                <tr class="{% if pending > 0 %}pending{% endif %}">
+                    <td>Credit / Pending</td>
+                    <td class="right">₹ {{ "%.2f"|format(pending) }}</td>
+                </tr>
+            </table>
+
+            <div class="line"></div>
+
+            <div class="center">
+                <strong>!! THANK YOU – VISIT AGAIN !!</strong><br><br>
+                Powered by akhilxxh
+            </div>
+
+        </div>
+    </div>
+
+    {% if auto %}
+    <script>
+        window.onload = function () {
+            window.print();
+
+            window.onafterprint = function () {
+                window.location.href = "/user/billing";
+            };
+
+            setTimeout(function () {
+                window.location.href = "/user/billing";
+            }, 1200);
+        };
+    </script>
+    {% endif %}
+
+</body>
+
+</html>

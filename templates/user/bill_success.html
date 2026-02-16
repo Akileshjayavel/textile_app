@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="card text-center">
+    <div class="card-body">
+        <h4 class="text-success mb-3">✅ Bill Saved Successfully</h4>
+
+        <p><strong>Bill No:</strong> {{ bill_no }}</p>
+
+        <div class="mt-4">
+            <a href="/bill/print/{{ bill_id }}"
+               target="_blank"
+               class="btn btn-primary me-2">
+                🖨 Print Bill
+            </a>
+
+            <a href="/user/billing" class="btn btn-secondary">
+                ➕ New Bill
+            </a>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

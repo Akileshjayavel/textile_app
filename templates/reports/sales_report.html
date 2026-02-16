@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h3 class="mb-4">Sales Report</h3>
+
+<!-- DATE RANGE FORM -->
+<form method="post" class="row g-3 mb-4">
+    <div class="col-md-4">
+        <label>Select Date Range</label>
+        <input type="text"
+               id="dateRange"
+               name="date_range"
+               class="form-control"
+               placeholder="Click start date, then end date"
+               value="{{ selected_range }}"
+               required>
+    </div>
+
+    <div class="col-md-2 d-flex align-items-end">
+        <button class="btn btn-primary w-100">
+            View Report
+        </button>
+    </div>
+
+<!-- DOWNLOAD PDF -->
+<div class="col-md-3 d-flex align-items-end">
+    {% if selected_range %}
+    <a class="btn btn-danger w-100"
+       href="{{ url_for('reports.export_pdf',
+                        from_date=selected_range.split(' to ')[0],
+                        to_date=selected_range.split(' to ')[1]) }}">
+        Download PDF
+    </a>
+    {% else %}
+    <button class="btn btn-danger w-100" disabled>
+        Download PDF
+    </button>
+    {% endif %}
+</div>
+
+
+<!-- SUMMARY CARDS -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center shadow-sm">
+            <div class="card-body">
+                <h6>Total Bills</h6>
+                <h4>{{ report.total_bills or 0 }}</h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-center shadow-sm border-success">
+            <div class="card-body">
+                <h6>Cash</h6>
+                <h4 class="text-success">₹ {{ report.cash_total or 0 }}</h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-center shadow-sm border-primary">
+            <div class="card-body">
+                <h6>UPI</h6>
+                <h4 class="text-primary">₹ {{ report.paytm_total or 0 }}</h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-center shadow-sm border-dark">
+            <div class="card-body">
+                <h6>Total Sales</h6>
+                <h4>₹ {{ report.total_sales or 0 }}</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- BILL TABLE -->
+<table class="table table-bordered table-hover">
+    <thead class="table-light">
+        <tr>
+            <th>Bill No</th>
+            <th>Date & Time</th>
+            <th>Cash</th>
+            <th>UPI</th>
+            <th>Total</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for b in bills %}
+        <tr>
+            <td>{{ b.bill_no }}</td>
+            <td>{{ b.created_at }}</td>
+            <td>₹ {{ b.cash_amount }}</td>
+            <td>₹ {{ b.paytm_amount }}</td>
+            <td>₹ {{ b.total_amount }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="5" class="text-center text-muted">
+                No sales found
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- FLATPICKR (SINGLE CALENDAR RANGE) -->
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    flatpickr("#dateRange", {
+        mode: "range",              // ✅ single calendar, two clicks
+        dateFormat: "Y-m-d",
+        allowInput: true,
+        defaultDate: "{{ selected_range }}"
+    });
+});
+</script>
+
+{% endblock %}

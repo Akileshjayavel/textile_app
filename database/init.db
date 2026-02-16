@@ -1,0 +1,11 @@
+-- ===============================
+-- REPORT FIX (SAFE MIGRATION)
+-- ===============================
+
+ALTER TABLE bills ADD COLUMN bill_date_only TEXT;
+ALTER TABLE bills ADD COLUMN bill_time_only TEXT;
+
+UPDATE bills
+SET
+  bill_date_only = DATE(bill_date),
+  bill_time_only = TIME(bill_date);

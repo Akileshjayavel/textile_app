@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h4 class="mb-3">
+    Ledger – {{ customer.name }} ({{ customer.mobile }})
+</h4>
+
+<table class="table table-bordered">
+    <thead class="table-light">
+        <tr>
+            <th>Date</th>
+            <th>Description</th>
+            <th class="text-end">Debit ₹</th>
+            <th class="text-end">Credit ₹</th>
+            <th class="text-end">Balance ₹</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in ledger %}
+        <tr>
+            <td>{{ row.date.split(' ')[0] }}</td>
+            <td>{{ row.description }}</td>
+            <td class="text-end">
+                {% if row.debit > 0 %}₹ {{ "%.2f"|format(row.debit) }}{% endif %}
+            </td>
+            <td class="text-end text-success">
+                {% if row.credit > 0 %}₹ {{ "%.2f"|format(row.credit) }}{% endif %}
+            </td>
+            <td class="text-end fw-bold {% if row.balance > 0 %}text-danger{% else %}text-success{% endif %}">
+                ₹ {{ "%.2f"|format(row.balance) }}
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="5" class="text-center text-muted">
+                No ledger entries
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

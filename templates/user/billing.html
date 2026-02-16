@@ -1,0 +1,799 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- HEADER -->
+<div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+        <div>
+                <h5 class="fw-bold text-dark mb-0">New Invoice</h5>
+                <p class="text-xs text-muted mb-0">Create bill for customer</p>
+        </div>
+        <div>
+                <a href="{{ url_for('user_dashboard') }}" class="btn btn-light btn-sm border text-muted">
+                        <i class="bi bi-arrow-left"></i> Back
+                </a>
+        </div>
+</div>
+
+<!-- POS TABS CONTAINER -->
+<div class="d-flex align-items-end mb-3">
+        <div class="pos-tabs-container flex-grow-1" id="billTabs" style="border-bottom: none; padding-bottom: 0;">
+                <!-- Tabs will be injected here -->
+        </div>
+        <div class="bg-light border-bottom p-1" style="border-top-right-radius: 8px;">
+                <button class="btn btn-sm btn-primary rounded-circle shadow-sm" id="addBillBtn"
+                        style="width: 32px; height: 32px; padding: 0;">
+                        <i class="bi bi-plus-lg"></i>
+                </button>
+        </div>
+</div>
+<div style="border-bottom: 1px solid var(--border-color); margin-top: -1px; margin-bottom: 1rem;"></div>
+
+<form method="post" action="/user/billing" id="billingForm">
+        <div class="row g-3"> <!-- Comfortable Grid -->
+
+                <!-- ================= LEFT PANEL ================= -->
+                <div class="col-lg-7">
+
+                        <!-- CUSTOMER SECTION -->
+                        <div class="card mb-3 border-0 shadow-sm">
+                                <div class="card-header bg-white border-bottom-0 pt-3 pb-2">
+                                        <div class="d-flex align-items-center gap-2">
+                                                <div class="bg-primary bg-opacity-10 text-primary rounded-circle p-2 d-flex align-items-center justify-content-center"
+                                                        style="width: 32px; height: 32px;">
+                                                        <i class="bi bi-person fw-bold"></i>
+                                                </div>
+                                                <h6 class="mb-0 fw-bold text-dark">Customer</h6>
+                                        </div>
+                                </div>
+                                <div class="card-body pt-0 pb-3 px-3">
+                                        <div class="mb-2">
+                                                <div class="input-group input-group-sm">
+                                                        <span class="input-group-text bg-light border-end-0 text-muted"><i
+                                                                        class="bi bi-search"></i></span>
+                                                        <input type="tel" name="customer_mobile" id="customer_mobile"
+                                                                class="form-control border-start-0 ps-2 bg-light"
+                                                                list="customerMobileList"
+                                                                placeholder="Search by Mobile Number" required
+                                                                autocomplete="off">
+                                                </div>
+                                                <datalist id="customerMobileList">
+                                                        {% for c in customers %}
+                                                        <option value="{{ c.mobile }}" data-name="{{ c.name }}"
+                                                                data-address="{{ c.address }}"></option>
+                                                        {% endfor %}
+                                                </datalist>
+                                        </div>
+
+                                        <!-- ALERTS -->
+                                        <div id="customerSuccessMsg"
+                                                class="alert alert-success py-1 px-2 text-xs border-0 bg-success bg-opacity-10 text-success mb-2 rounded-1"
+                                                style="display:none;">
+                                                <i class="bi bi-check-circle me-1"></i> Customer details saved.
+                                        </div>
+
+                                        <!-- EXISTING INFO -->
+                                        <div id="existingCustomerBox"
+                                                class="bg-primary bg-opacity-5 p-3 rounded-2 border border-primary border-opacity-10"
+                                                style="display:none;">
+                                                <div class="row">
+                                                        <div class="col-7">
+                                                                <label
+                                                                        class="text-xs text-muted font-bold uppercase mb-0">Customer
+                                                                        Name</label>
+                                                                <div class="fw-bold text-dark text-sm" id="viewName">
+                                                                </div>
+                                                        </div>
+                                                        <div class="col-5 text-end">
+                                                                <label
+                                                                        class="text-xs text-muted font-bold uppercase mb-0">Location</label>
+                                                                <div class="fw-medium text-dark text-sm"
+                                                                        id="viewAddress"></div>
+                                                        </div>
+                                                </div>
+                                        </div>
+
+                                        <!-- NEW CUSTOMER FIELDS -->
+                                        <div id="newCustomerBox" style="display:none;"
+                                                class="bg-light p-2 rounded border">
+                                                <p class="text-xs text-muted mb-2"><i class="bi bi-info-circle"></i> New
+                                                        customer detected. Please add details.</p>
+                                                <div class="row g-2">
+                                                        <div class="col-md-5">
+                                                                <input type="text" id="customerNameInput"
+                                                                        class="form-control form-control-sm"
+                                                                        placeholder="Full Name">
+                                                        </div>
+                                                        <div class="col-md-5">
+                                                                <input type="text" id="customerAddressInput"
+                                                                        class="form-control form-control-sm"
+                                                                        placeholder="City/Address">
+                                                        </div>
+                                                        <div class="col-md-2">
+                                                                <button type="button" id="addCustomerBtn"
+                                                                        class="btn btn-primary btn-sm w-100 h-100">
+                                                                        Add
+                                                                </button>
+                                                        </div>
+                                                </div>
+                                        </div>
+
+                                        <input type="hidden" name="customer_name" id="customer_name">
+                                        <input type="hidden" name="customer_address" id="customer_address">
+                                        <input type="hidden" name="customer_added" id="customer_added" value="0">
+                                </div>
+                        </div>
+
+                        <!-- PRODUCT SELECTION -->
+                        <div class="card border-0 shadow-sm" style="min-height: 400px;">
+                                <div class="card-header bg-white border-bottom py-3">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                                <div class="d-flex align-items-center gap-2">
+                                                        <div class="bg-warning bg-opacity-10 text-warning rounded-circle p-2 d-flex align-items-center justify-content-center"
+                                                                style="width: 32px; height: 32px;">
+                                                                <i class="bi bi-box-seam fw-bold"></i>
+                                                        </div>
+                                                        <h6 class="mb-0 fw-bold text-dark">Select Products</h6>
+                                                </div>
+                                                <div class="position-relative" style="width: 200px;">
+                                                        <input type="text" id="productSearch"
+                                                                class="form-control form-control-sm ps-5 rounded-pill bg-light border-0"
+                                                                placeholder="Type to search...">
+                                                        <i
+                                                                class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted text-xs"></i>
+                                                </div>
+                                        </div>
+                                </div>
+                                <div class="card-body p-0">
+                                        <div class="table-responsive" style="height: 380px; overflow-y: auto;">
+                                                <table class="table table-hover align-middle mb-0">
+                                                        <thead class="sticky-top bg-light text-xs text-muted uppercase">
+                                                                <tr>
+                                                                        <th class="ps-4 py-2 border-bottom">Product Name
+                                                                        </th>
+                                                                        <th class="text-end py-2 border-bottom">Price
+                                                                        </th>
+                                                                        <th class="text-center py-2 border-bottom"
+                                                                                width="80">Action</th>
+                                                                </tr>
+                                                        </thead>
+                                                        <tbody id="productTable">
+                                                                {% for p in products %}
+                                                                <tr>
+                                                                        <td class="ps-4 py-2">
+                                                                                <div
+                                                                                        class="fw-medium text-dark text-sm">
+                                                                                        {{ p.name }}</div>
+                                                                        </td>
+                                                                        <td
+                                                                                class="text-end py-2 font-monospace text-muted text-sm">
+                                                                                ₹{{ p.selling_price }}</td>
+                                                                        <td class="text-center py-2">
+                                                                                <button type="button"
+                                                                                        class="btn btn-sm btn-outline-primary add-btn rounded-circle p-0 d-flex justify-content-center align-items-center mx-auto transition-all"
+                                                                                        style="width: 28px; height: 28px;"
+                                                                                        data-id="{{ p.id }}"
+                                                                                        data-name="{{ p.name }}"
+                                                                                        data-price="{{ p.selling_price }}">
+                                                                                        <i class="bi bi-plus-lg"></i>
+                                                                                </button>
+                                                                        </td>
+                                                                </tr>
+                                                                {% endfor %}
+                                                        </tbody>
+                                                </table>
+                                        </div>
+                                </div>
+                        </div>
+
+                </div>
+
+                <!-- ================= RIGHT PANEL (Summary) ================= -->
+                <div class="col-lg-5">
+                        <div class="glass-premium glass-card card border-0 shadow-lg sticky-top h-100"
+                                style="top: 20px; z-index: 100; border-radius: 12px; overflow: hidden;">
+                                <div class="card-header bg-primary text-white py-3 text-center position-relative">
+                                        <h6 class="mb-0 text-white fw-bold"><i class="bi bi-receipt me-1"></i> Invoice
+                                                Bill</h6>
+                                        <div class="position-absolute top-100 start-50 translate-middle">
+                                                <div class="bg-white rounded-circle shadow-sm p-1">
+                                                        <i class="bi bi-chevron-down text-primary"></i>
+                                                </div>
+                                        </div>
+                                </div>
+
+                                <div class="card-body p-0 mt-3">
+                                        <div class="table-responsive" style="max-height: 320px; overflow-y: auto;">
+                                                <table class="table table-striped table-sm table-borderless mb-0">
+                                                        <thead class="bg-light text-xs text-muted uppercase">
+                                                                <tr>
+                                                                        <th class="ps-3 py-2">Item</th>
+                                                                        <th width="60" class="text-center py-2">Qty</th>
+                                                                        <th class="text-end pe-3 py-2">Total</th>
+                                                                        <th width="30"></th>
+                                                                </tr>
+                                                        </thead>
+                                                        <tbody id="billItems">
+                                                                <tr>
+                                                                        <td colspan="4"
+                                                                                class="text-center text-muted py-5">
+                                                                                <i
+                                                                                        class="bi bi-cart3 display-6 mb-2 d-block opacity-25"></i>
+                                                                                <span class="text-sm">No items
+                                                                                        added</span>
+                                                                        </td>
+                                                                </tr>
+                                                        </tbody>
+                                                </table>
+                                        </div>
+                                </div>
+
+                                <!-- PAYMENT & TOTALS -->
+                                <div class="card-body bg-light bg-opacity-50 p-3 border-top mt-auto">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <span class="text-sm text-muted">Subtotal</span>
+                                                <span class="text-sm fw-bold text-dark">₹ <span
+                                                                id="subTotalDisplay">0.00</span></span>
+                                        </div>
+
+                                        <div class="row align-items-center mb-3">
+                                                <div class="col-8">
+                                                        <label class="text-xs text-muted">Discount (%)</label>
+                                                </div>
+                                                <div class="col-4">
+                                                        <input type="number" id="discount"
+                                                                class="form-control form-control-sm text-end bg-white"
+                                                                value="0">
+                                                </div>
+                                        </div>
+
+                                        <div class="p-3 bg-white rounded border shadow-sm mb-3">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                        <h6 class="fw-bold text-dark mb-0">Grand Total</h6>
+                                                        <h4 class="fw-bold text-primary mb-0">₹ <span
+                                                                        id="totalAmount">0.00</span></h4>
+                                                </div>
+                                        </div>
+
+                                        <div class="row g-2 mb-3">
+                                                <div class="col-6">
+                                                        <div class="form-floating">
+                                                                <input type="number" id="cash_amount" name="cash_amount"
+                                                                        class="form-control form-control-sm fw-bold"
+                                                                        placeholder="0" value="0">
+                                                                <label class="text-xs">Cash Received</label>
+                                                        </div>
+                                                </div>
+                                                <div class="col-6">
+                                                        <div class="form-floating">
+                                                                <input type="number" id="paytm_amount"
+                                                                        name="paytm_amount"
+                                                                        class="form-control form-control-sm fw-bold"
+                                                                        placeholder="0" value="0">
+                                                                <label class="text-xs">UPI / Online</label>
+                                                        </div>
+                                                </div>
+                                        </div>
+
+                                        <div id="balanceAlert" class="alert border text-center py-2 mb-0 opacity-75">
+                                                <small class="fw-bold text-muted">Balance Due: <span class="text-dark">₹
+                                                                <span id="balanceAmount">0.00</span></span></small>
+                                        </div>
+                                </div>
+
+                                <div class="card-footer bg-white p-3 border-top-0 d-flex gap-2">
+                                        <button type="submit" class="btn btn-primary w-100 py-2 fw-bold shadow-sm">
+                                                <i class="bi bi-printer-fill me-1"></i> Print Bill
+                                        </button>
+                                        <button type="button" class="btn btn-outline-danger w-auto px-3"
+                                                onclick="cancelBill()" title="Reset">
+                                                <i class="bi bi-arrow-counterclockwise"></i>
+                                        </button>
+                                </div>
+                        </div>
+
+                        <input type="hidden" name="final_total" id="final_total">
+                        <input type="hidden" name="items_json" id="items_json">
+                </div>
+
+        </div>
+</form>
+
+<script>
+        /* PREVENT ENTER SUBMIT */
+        document.getElementById("billingForm").addEventListener("keydown", e => {
+                if (e.key === "Enter") e.preventDefault();
+        });
+
+        // Prevent Form Submission Default -> Use Manager
+        document.getElementById("billingForm").addEventListener("submit", function (e) {
+                e.preventDefault();
+                BillManager.saveCurrentState(); // Save current before submit
+                submitBillViaAjax();
+        });
+
+        /* SHORTCUTS */
+        document.addEventListener("keydown", e => {
+                // Alt+N : New Bill
+                if (e.altKey && e.key.toLowerCase() === 'n') {
+                        e.preventDefault();
+                        BillManager.addBill();
+                }
+                // Alt+W : Close Bill
+                if (e.altKey && e.key.toLowerCase() === 'w') {
+                        e.preventDefault();
+                        BillManager.removeBill(BillManager.activeId, e);
+                }
+                // Alt+Arrows : Switch
+                if (e.altKey && e.key === 'ArrowRight') {
+                        e.preventDefault();
+                        BillManager.switchNext();
+                }
+                if (e.altKey && e.key === 'ArrowLeft') {
+                        e.preventDefault();
+                        BillManager.switchPrev();
+                }
+        });
+
+        /* =========================================
+           MULTI-BILL MANAGER
+           ========================================= */
+        let cart = []; // Global cart for active bill
+
+        const BillManager = {
+                bills: [],
+                activeId: null,
+
+                init() {
+                        this.loadFromStorage();
+
+                        // User specifically asked for 3 bills at same time
+                        if (this.bills.length === 0) {
+                                for (let i = 0; i < 3; i++) {
+                                        this.addBill(true); // silent add
+                                }
+                                this.activeId = this.bills[0].id;
+                        } else {
+                                if (!this.bills.find(b => b.id === this.activeId)) {
+                                        this.activeId = this.bills[0].id;
+                                }
+                        }
+
+                        this.loadState(this.activeId);
+                        this.renderTabs();
+
+                        document.getElementById("addBillBtn").addEventListener("click", () => this.addBill());
+                },
+
+                addBill(silent = false) {
+                        if (this.activeId && !silent) {
+                                this.saveCurrentState();
+                        }
+
+                        const id = Date.now().toString() + Math.random().toString(36).substr(2, 5);
+                        const newBill = {
+                                id: id,
+                                customer: { mobile: '', name: '', address: '', added: '0' },
+                                cart: [],
+                                discount: 0,
+                                cash: 0,
+                                upi: 0,
+                                total: 0
+                        };
+
+                        this.bills.push(newBill);
+                        if (!silent) {
+                                this.activeId = id;
+                                this.saveToStorage();
+                                this.loadState(id);
+                                this.renderTabs();
+                        }
+                },
+
+                switchBill(id) {
+                        if (this.activeId === id) return;
+
+                        this.saveCurrentState();
+                        this.activeId = id;
+                        this.saveToStorage();
+
+                        this.loadState(id);
+                        this.renderTabs();
+                },
+
+                switchNext() {
+                        const idx = this.bills.findIndex(b => b.id === this.activeId);
+                        if (idx < this.bills.length - 1) this.switchBill(this.bills[idx + 1].id);
+                },
+
+                switchPrev() {
+                        const idx = this.bills.findIndex(b => b.id === this.activeId);
+                        if (idx > 0) this.switchBill(this.bills[idx - 1].id);
+                },
+
+                async removeBill(id, e, force = false) {
+                        if (e) e.stopPropagation();
+
+                        if (this.bills.length <= 1 && !force) {
+                                if (await showConfirm("Clear Bill", "Do you want to clear this bill and start fresh?")) {
+                                        this.bills = [];
+                                        this.saveToStorage(); // Clear storage
+                                        this.addBill();
+                                }
+                                return;
+                        }
+
+                        if (!force && !(await showConfirm("Close Tab", "Unsaved changes will be lost. Close this tab?"))) return;
+
+                        const idx = this.bills.findIndex(b => b.id === id);
+                        if (idx === -1) return;
+
+                        this.bills.splice(idx, 1);
+
+                        if (this.bills.length === 0) {
+                                this.addBill(); // Always keep one
+                        } else {
+                                // Determine next active
+                                if (id === this.activeId) {
+                                        const newIdx = Math.max(0, idx - 1);
+                                        this.activeId = this.bills[newIdx].id;
+                                        this.loadState(this.activeId);
+                                }
+                                this.saveToStorage();
+                                this.renderTabs();
+                        }
+                },
+
+                saveCurrentState() {
+                        if (!this.activeId) return;
+                        const bill = this.bills.find(b => b.id === this.activeId);
+                        if (!bill) return;
+
+                        // Save DOM values to bill object
+                        bill.customer.mobile = document.getElementById("customer_mobile").value;
+                        bill.customer.name = document.getElementById("customer_name").value;
+                        bill.customer.address = document.getElementById("customer_address").value;
+                        bill.customer.added = document.getElementById("customer_added").value;
+
+                        bill.discount = document.getElementById("discount").value;
+                        bill.cash = document.getElementById("cash_amount").value;
+                        bill.upi = document.getElementById("paytm_amount").value;
+
+                        bill.cart = [...cart]; // Save global cart copy
+
+                        // Calculate total for tab display
+                        const subtotal = bill.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+                        const discVal = Number(bill.discount) || 0;
+                        bill.total = subtotal - (subtotal * discVal / 100);
+
+                        this.saveToStorage();
+                        this.updateTabTitle(bill.id, bill); // Live update tab
+                },
+
+                loadState(id) {
+                        const bill = this.bills.find(b => b.id === id);
+                        if (!bill) return;
+
+                        // Restore DOM values
+                        document.getElementById("customer_mobile").value = bill.customer.mobile;
+                        document.getElementById("customer_name").value = bill.customer.name;
+                        document.getElementById("customer_address").value = bill.customer.address;
+                        document.getElementById("customer_added").value = bill.customer.added;
+
+                        document.getElementById("discount").value = bill.discount;
+                        document.getElementById("cash_amount").value = bill.cash;
+                        document.getElementById("paytm_amount").value = bill.upi;
+
+                        // Restore global cart
+                        cart = [...bill.cart];
+                        renderCart(); // This also updates totals
+
+                        // Update Customer View Boxes
+                        updateCustomerUI(bill.customer);
+                },
+
+                renderTabs() {
+                        const container = document.getElementById("billTabs");
+                        container.innerHTML = this.bills.map((b, i) => {
+                                const amount = b.total ? `₹${Math.round(b.total)}` : '';
+                                const name = b.customer.name ? b.customer.name.split(' ')[0] : 'New Bill';
+
+                                return `
+                                <div class="pos-tab ${b.id === this.activeId ? 'active' : ''}" 
+                                     onclick="BillManager.switchBill('${b.id}')">
+                                    <div class="d-flex flex-column" style="line-height:1.2;">
+                                        <span class="text-xs fw-bold text-uppercase" style="font-size: 0.65rem; opacity: 0.7;">Bill ${i + 1}</span>
+                                        <span class="text-truncate fw-semibold" style="max-width: 90px; color: inherit;">${name}</span>
+                                    </div>
+                                    ${amount ? `<span class="badge bg-primary bg-opacity-10 text-primary ms-1 small" style="font-size:0.7rem;">${amount}</span>` : ''}
+                                    
+                                    <div class="pos-tab-close ms-auto" onclick="BillManager.removeBill('${b.id}', event)">
+                                        <i class="bi bi-x"></i>
+                                    </div>
+                                </div>
+                        `}).join('');
+                },
+
+                updateTabTitle(id, bill) {
+                        this.renderTabs();
+                },
+
+                saveToStorage() {
+                        const state = {
+                                bills: this.bills,
+                                activeId: this.activeId
+                        };
+                        localStorage.setItem('pos_bills_v1', JSON.stringify(state));
+                },
+
+                loadFromStorage() {
+                        const raw = localStorage.getItem('pos_bills_v1');
+                        if (raw) {
+                                try {
+                                        const state = JSON.parse(raw);
+                                        this.bills = state.bills || [];
+                                        this.activeId = state.activeId;
+                                } catch (e) { console.error("Storage Error", e); }
+                        }
+                }
+        };
+
+        function updateCustomerUI(cust) {
+                const existingBox = document.getElementById("existingCustomerBox");
+                const newBox = document.getElementById("newCustomerBox");
+                const successMsg = document.getElementById("customerSuccessMsg");
+
+                // Hide all first
+                existingBox.style.display = "none";
+                newBox.style.display = "none";
+                successMsg.style.display = "none";
+
+                if (cust.name && cust.address) {
+                        existingBox.style.display = "block";
+                        document.getElementById("viewName").innerText = cust.name;
+                        document.getElementById("viewAddress").innerText = cust.address;
+                } else if (cust.mobile.length === 10) {
+                        // Could re-trigger check logic, but safer to just let user search again if needed
+                        // Or manually show new box if desired. keeping logic simple for restore.
+                }
+        }
+
+        function submitBillViaAjax() {
+                const form = document.getElementById("billingForm");
+                const formData = new FormData(form);
+                formData.append("is_ajax", "1");
+
+                fetch("/user/billing", {
+                        method: "POST",
+                        body: formData
+                })
+                        .then(response => response.json())
+                        .then(data => {
+                                if (data.success) {
+                                        const printWindow = window.open(data.redirect_url, '_blank');
+                                        if (printWindow) {
+                                                printWindow.focus();
+                                                showToast("Bill saved & printing...");
+                                        } else {
+                                                showToast("Please allow popups for printing", "info");
+                                        }
+
+                                        BillManager.removeBill(BillManager.activeId, null, true);
+
+                                } else {
+                                        showToast(data.message || "Error saving bill", "error");
+                                }
+                        })
+                        .catch(err => {
+                                console.error(err);
+                                showToast("Error submitting bill", "error");
+                        });
+        }
+
+
+
+
+        /* =========================================
+           EXISTING LOGIC WITH MINOR MODS
+           ========================================= */
+
+        /* CUSTOMER LOGIC */
+        const mobileInput = document.getElementById("customer_mobile");
+        const mobileList = document.getElementById("customerMobileList");
+        const existingBox = document.getElementById("existingCustomerBox");
+        const newBox = document.getElementById("newCustomerBox");
+        const viewName = document.getElementById("viewName");
+        const viewAddress = document.getElementById("viewAddress");
+        const nameInput = document.getElementById("customerNameInput");
+        const addressInput = document.getElementById("customerAddressInput");
+        const addBtn = document.getElementById("addCustomerBtn");
+        const successMsg = document.getElementById("customerSuccessMsg");
+
+        // Hidden Fields
+        const nameHidden = document.getElementById("customer_name");
+        const addressHidden = document.getElementById("customer_address");
+        const addedHidden = document.getElementById("customer_added");
+
+        /* MOBILE MATCH */
+        mobileInput.addEventListener("input", () => {
+                const raw = mobileInput.value.replace(/\D/g, "").slice(0, 10);
+                mobileInput.value = raw;
+
+                // Reset Views
+                existingBox.style.display = "none";
+                newBox.style.display = "none";
+                successMsg.style.display = "none";
+                addedHidden.value = "0";
+
+                // Clear hidden fields if mobile changes
+                nameHidden.value = "";
+                addressHidden.value = "";
+
+                // Check Match
+                for (let opt of mobileList.options) {
+                        if (opt.value.replace(/\D/g, "") === raw) {
+                                // FOUND EXISTING
+                                viewName.innerText = opt.dataset.name;
+                                viewAddress.innerText = opt.dataset.address;
+
+                                nameHidden.value = opt.dataset.name;
+                                addressHidden.value = opt.dataset.address;
+                                addedHidden.value = "1";
+
+                                existingBox.style.display = "block";
+                                return;
+                        }
+                }
+
+                // IF NOT FOUND & VALID LENGTH -> SHOW ADD NEW
+                if (raw.length === 10) {
+                        newBox.style.display = "block";
+                        // nameInput.focus(); // Annoying on tab switch restore
+                }
+        });
+
+        /* ADD NEW CUSTOMER */
+        addBtn.addEventListener("click", () => {
+                const mobile = mobileInput.value.replace(/\D/g, "");
+                const name = nameInput.value.trim();
+                const address = addressInput.value.trim();
+
+                if (!name || !address) return showToast("Please enter customer details", "error");
+
+                nameHidden.value = name;
+                addressHidden.value = address;
+                addedHidden.value = "1";
+
+                // Add to datalist for future
+                const option = document.createElement("option");
+                option.value = mobile;
+                option.dataset.name = name;
+                option.dataset.address = address;
+                mobileList.appendChild(option);
+
+                // Update View
+                viewName.innerText = name;
+                viewAddress.innerText = address;
+
+                newBox.style.display = "none";
+                existingBox.style.display = "block";
+
+                successMsg.style.display = "block";
+                setTimeout(() => successMsg.style.display = "none", 3000);
+        });
+
+        /* PRODUCT SEARCH */
+        document.getElementById("productSearch").addEventListener("keyup", function () {
+                const v = this.value.toLowerCase();
+                document.querySelectorAll("#productTable tr").forEach(r => {
+                        r.style.display = r.innerText.toLowerCase().includes(v) ? "" : "none";
+                });
+        });
+
+        /* CART LOGIC */
+        // cart is global now
+
+        document.querySelectorAll(".add-btn").forEach(btn => {
+                btn.onclick = () => {
+                        const id = Number(btn.dataset.id);
+                        const name = btn.dataset.name;
+                        const price = Number(btn.dataset.price);
+
+                        const item = cart.find(i => i.id === id);
+                        item ? item.qty++ : cart.push({ id, name, price, qty: 1 });
+
+                        renderCart();
+                };
+        });
+
+        document.getElementById("discount").oninput = renderCart;
+        document.getElementById("cash_amount").oninput = calculatePayment;
+        document.getElementById("paytm_amount").oninput = calculatePayment;
+
+        function renderCart() {
+                const tbody = document.getElementById("billItems");
+                tbody.innerHTML = "";
+
+                if (!cart.length) {
+                        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-5"><i class="bi bi-cart3 display-6 mb-2 d-block opacity-25"></i><span class="text-sm">No items</span></td></tr>`;
+                        updateTotals(0);
+                        return;
+                }
+
+                let subtotal = 0;
+                cart.forEach((item, i) => {
+                        const amt = item.qty * item.price;
+                        subtotal += amt;
+
+                        tbody.innerHTML += `
+        <tr>
+            <td class="ps-3 align-middle">
+                <div class="fw-medium text-dark text-sm">${item.name}</div>
+            </td>
+            <td class="text-center align-middle">
+                <input type="number" value="${item.qty}" min="1" class="form-control form-control-sm text-center px-1 py-1"
+                       style="width: 50px; margin: 0 auto;"
+                       onchange="cart[${i}].qty=this.value;renderCart()">
+            </td>
+            <td class="text-end fw-bold text-dark pe-3 text-sm align-middle">₹${amt.toFixed(2)}</td>
+            <td class="text-center align-middle">
+                <button type="button" class="btn btn-link text-danger p-0 btn-sm" onclick="cart.splice(${i},1);renderCart()">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        </tr>`;
+                });
+
+                document.getElementById("subTotalDisplay").innerText = subtotal.toFixed(2);
+
+                const discount = Number(document.getElementById("discount").value) || 0;
+                const total = subtotal - (subtotal * discount / 100);
+                updateTotals(total);
+        }
+
+        function updateTotals(total) {
+                document.getElementById("totalAmount").innerText = total.toFixed(2);
+                document.getElementById("final_total").value = total.toFixed(2);
+                document.getElementById("items_json").value = JSON.stringify(cart);
+                calculatePayment();
+        }
+
+        function calculatePayment() {
+                const total = Number(document.getElementById("final_total").value) || 0;
+                const cash = Number(document.getElementById("cash_amount").value) || 0;
+                const upi = Number(document.getElementById("paytm_amount").value) || 0;
+
+                const balance = total - cash - upi;
+                const alertBox = document.getElementById("balanceAlert");
+
+                // Only show "Payment Complete" if there is actually a bill
+                if (total > 0 && balance <= 0.5) {
+                        alertBox.className = "alert alert-success border-0 text-center py-2 mb-0 shadow-sm";
+                        alertBox.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i> <small class="fw-bold">Payment Complete</small>`;
+                } else if (total > 0) {
+                        alertBox.className = "alert alert-warning border-0 text-center py-2 mb-0 shadow-sm";
+                        alertBox.innerHTML = `<small class="fw-bold text-dark">Pending to pay: ₹ <span id="balanceAmount">${balance.toFixed(2)}</span></small>`;
+                } else {
+                        // Empty state - minimal
+                        alertBox.className = "alert border-0 text-center py-2 mb-0 opacity-75";
+                        alertBox.innerHTML = `<small class="text-muted">No products added</small>`;
+                }
+
+                // Update the span separately only if it's there (for live typing)
+                // But the innerHTML above already sets the initial value, so this is just a safeguard
+                const balanceSpan = document.getElementById("balanceAmount");
+                if (balanceSpan) {
+                        balanceSpan.innerText = balance.toFixed(2);
+                }
+        }
+
+        async function cancelBill() {
+                if (await showConfirm("Reset Bill", "Are you sure you want to clear current items?")) {
+                        BillManager.removeBill(BillManager.activeId, null, true);
+                }
+        }
+
+        // START MANAGER
+        BillManager.init();
+</script>
+
+{% endblock %}
